@@ -174,7 +174,12 @@ extension DirtyJSON {
     }
 
     static func hasTrailingTokenOrEnd(_ iterator: StringIterator) -> Bool {
-        for index in iterator.index + 1 ..< iterator.array.count {
+        let startIndex = iterator.index + 1
+        guard startIndex < iterator.array.count else {
+            return true
+        }
+        
+        for index in startIndex ..< iterator.array.count {
             let value = iterator.array[index]
             if isWhitespace(value) {
                 continue
@@ -224,15 +229,15 @@ extension DirtyJSON {
         }
         let peekPrevResult = iterator.peekPrev()
         // delete trailing ','
-        if peekPrevResult.lastChar == "," {
+        if peekPrevResult.lastChar == "," && peekPrevResult.index >= 0 && peekPrevResult.index < iterator.array.count {
             iterator.array[peekPrevResult.index] = ""
         }
         if status.inObject() {
             // close token should be '}'
             iterator.set("}")
-            if status.expectColon {
+            if status.expectColon && peekPrevResult.index >= 0 && peekPrevResult.index < iterator.array.count {
                 iterator.array[peekPrevResult.index] += ":null"
-            } else if peekPrevResult.lastChar == ":" {
+            } else if peekPrevResult.lastChar == ":" && peekPrevResult.index >= 0 && peekPrevResult.index < iterator.array.count {
                 iterator.array[peekPrevResult.index] += "null"
             }
         } else {
@@ -281,6 +286,12 @@ extension DirtyJSON {
         let valueIndex0 = iterator.index
         skipUntilToken(iterator)
         let valueIndex1 = iterator.index
+        
+        // 确保索引范围有效
+        guard valueIndex0 >= 0 && valueIndex1 < iterator.array.count && valueIndex0 <= valueIndex1 else {
+            return
+        }
+        
         // get value
         let value = iterator.array[valueIndex0...valueIndex1].joined()
         if isNumber(value) {
@@ -293,34 +304,44 @@ extension DirtyJSON {
             case "true", "false", "null":
                 for index in valueIndex0...valueIndex1 {
                     // lower case the bool or null value
-                    iterator.array[index] = iterator.array[index].lowercased()
+                    if index >= 0 && index < iterator.array.count {
+                        iterator.array[index] = iterator.array[index].lowercased()
+                    }
                 }
             default:
                 // value is string, must be quoted
-                iterator.array[valueIndex0] = "\"" + token
-                iterator.array[valueIndex1] = iterator.get() + "\""
+                if valueIndex0 >= 0 && valueIndex0 < iterator.array.count {
+                    iterator.array[valueIndex0] = "\"" + token
+                }
+                if valueIndex1 >= 0 && valueIndex1 < iterator.array.count {
+                    iterator.array[valueIndex1] = iterator.get() + "\""
+                }
         }
     }
 
     static func encounterEnd(_ iterator: StringIterator, _ status: TokenStatus) {
         let peekPrevResult = iterator.peekPrev()
         if status.hasObjectKey {
-            if status.expectColon {
+            if status.expectColon && peekPrevResult.index >= 0 && peekPrevResult.index < iterator.array.count {
                 iterator.array[peekPrevResult.index] += ":null"
-            } else {
+            } else if peekPrevResult.index >= 0 && peekPrevResult.index < iterator.array.count {
                 iterator.array[peekPrevResult.index] += "null"
             }
         }
-        if peekPrevResult.lastChar == "," {
+        if peekPrevResult.lastChar == "," && peekPrevResult.index >= 0 && peekPrevResult.index < iterator.array.count {
             iterator.array[peekPrevResult.index] = ""
         }
         // empty `stack`
         while !status.stack.isEmpty {
             switch status.stack.popLast() {
                 case "{":
-                    iterator.array[iterator.array.count - 1] += "}"
+                    if !iterator.array.isEmpty {
+                        iterator.array[iterator.array.count - 1] += "}"
+                    }
                 case "[":
-                    iterator.array[iterator.array.count - 1] += "]"
+                    if !iterator.array.isEmpty {
+                        iterator.array[iterator.array.count - 1] += "]"
+                    }
                 default:
                     break
             }

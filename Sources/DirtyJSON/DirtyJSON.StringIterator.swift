@@ -26,10 +26,11 @@ extension DirtyJSON {
         }
         
         func peek(_ n: Int = 1) -> String? {
-            guard index < array.count - 1 else {
+            let peekIndex = index + n
+            guard peekIndex >= 0 && peekIndex < array.count else {
                 return nil
             }
-            return array[index + n]
+            return array[peekIndex]
         }
         
         func peekPrev() -> Token {
@@ -43,15 +44,18 @@ extension DirtyJSON {
         }
         
         func get() -> String {
-            return array[index] // Notice: unsafe
+            guard index >= 0 && index < array.count else { return "" }
+            return array[index]
         }
         
         func set(_ value: String) {
-            array[index] = value // Notice: unsafe
+            guard index >= 0 && index < array.count else { return }
+            array[index] = value
         }
         
         func append(_ value: String) {
-            array[index] = array[index] + value // Notice: unsafe
+            guard index >= 0 && index < array.count else { return }
+            array[index] = array[index] + value
         }
         
         func done() -> Bool {
