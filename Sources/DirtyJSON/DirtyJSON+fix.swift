@@ -335,12 +335,18 @@ extension DirtyJSON {
         while !status.stack.isEmpty {
             switch status.stack.popLast() {
                 case "{":
-                    if !iterator.array.isEmpty {
-                        iterator.array[iterator.array.count - 1] += "}"
+                    if !iterator.array.isEmpty && iterator.array.count > 0 {
+                        let lastIndex = iterator.array.count - 1
+                        if lastIndex >= 0 && lastIndex < iterator.array.count {
+                            iterator.array[lastIndex] += "}"
+                        }
                     }
                 case "[":
-                    if !iterator.array.isEmpty {
-                        iterator.array[iterator.array.count - 1] += "]"
+                    if !iterator.array.isEmpty && iterator.array.count > 0 {
+                        let lastIndex = iterator.array.count - 1
+                        if lastIndex >= 0 && lastIndex < iterator.array.count {
+                            iterator.array[lastIndex] += "]"
+                        }
                     }
                 default:
                     break

@@ -16,6 +16,7 @@ extension DirtyJSON {
         @discardableResult
         func prev() -> String? {
             for i in stride(from: index - 1, through: 0, by: -1) {
+                guard i >= 0 && i < array.count else { continue }
                 let value = array[i]
                 if (!value.isEmpty && !DirtyJSON.isWhitespace(value)) {
                     index = i
@@ -35,9 +36,10 @@ extension DirtyJSON {
         
         func peekPrev() -> Token {
             for i in stride(from: index - 1, through: 0, by: -1) {
+                guard i >= 0 && i < array.count else { continue }
                 let value = array[i].trimmingCharacters(in: .whitespacesAndNewlines)
                 if (!value.isEmpty && !DirtyJSON.isWhitespace(value)) {
-                    return Token(index: i, value: value, lastChar: value.last!.description)
+                    return Token(index: i, value: value, lastChar: value.last?.description)
                 }
             }
             return Token(index: -1, value: nil, lastChar: nil)
